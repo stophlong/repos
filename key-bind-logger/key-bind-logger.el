@@ -134,5 +134,3 @@
 
 
 (provide 'key-bind-logger)
-
-(setq debug-on-error t)
