@@ -1,3 +1,10 @@
+;;; key-bind-logger.el
+
+;; Author: Ryo Takaishi
+;; Keywords: tools
+;; Version: 0.1
+
+
 (defgroup key-bind-logger nil
   "key bind logger"
   :group 'tools)
@@ -16,6 +23,11 @@
   ""
   :group 'key-bind-logger
   :type 'boolean)
+
+(defcustom key-bind-logger-count-limit 100
+  ""
+  :group 'key-bind-logger
+  :type 'integer)
 
 (defconst key-bind-logger-log-file "key-bind-logger")
 (defconst key-bind-logger-buf "*key-bind-logger*")
@@ -97,9 +109,9 @@
 		    (cdr (assq major-mode key-bind-logger-log-alist)))))
       (when l
 	(setcar (cddr l) (1+ (nth 2 l)))
-	(setq key-bind-logger-update-flag t))))
-  (unless (string-equal (buffer-name) key-bind-logger-buf)
-    (key-bind-logger-update-log)))
+	(setq key-bind-logger-update-flag t)))
+    (unless (string-equal (buffer-name) key-bind-logger-buf)
+      (key-bind-logger-update-log))))
 
 ;;コマンド実行時にログの更新
 (defun key-bind-logger-update-log ()
@@ -107,9 +119,20 @@
     (with-current-buffer (get-buffer-create key-bind-logger-buf)
       (erase-buffer)
       (dolist (l (cdr (assq mode key-bind-logger-log-alist)))
-	(insert (format "%-16s %-50s %3d\n"
-			(nth 1 l) (nth 0 l) (nth 2 l)))))))
+	;;一定回数以上使ったコマンドは表示しない
+	(when (< (nth 2 l) 50)
+	  (insert (format "%-16s %-50s %3d\n"
+			  (nth 1 l) (nth 0 l) (nth 2 l))))))))
 
+;;実行したコマンドが50回以上ならリストから削除
+(defun key-bind-logger-confirm-count-of-binding (command)
+  (let ((l (assoc (symbol-name this-command)
+		  (cdr (assq major-mode key-bind-logger-log-alist)))))
+    (when (> (nth 2 l) 50)
+      (delq l (assoc major-mode key-bind-logger-log-alist)))))
+  
 
 
 (provide 'key-bind-logger)
+
+(setq debug-on-error t)
