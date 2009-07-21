@@ -130,7 +130,5 @@
 		  (cdr (assq major-mode key-bind-logger-log-alist)))))
     (when (> (nth 2 l) 50)
       (delq l (assoc major-mode key-bind-logger-log-alist)))))
-  
-aaa
 
 (provide 'key-bind-logger)
