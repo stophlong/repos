@@ -120,15 +120,8 @@
       (erase-buffer)
       (dolist (l (cdr (assq mode key-bind-logger-log-alist)))
 	;;一定回数以上使ったコマンドは表示しない
-	(when (< (nth 2 l) 50)
+	(when (< (nth 2 l) key-bind-logger-count-limit)
 	  (insert (format "%-16s %-50s %3d\n"
 			  (nth 1 l) (nth 0 l) (nth 2 l))))))))
-
-;;実行したコマンドが50回以上ならリストから削除
-(defun key-bind-logger-confirm-count-of-binding (command)
-  (let ((l (assoc (symbol-name this-command)
-		  (cdr (assq major-mode key-bind-logger-log-alist)))))
-    (when (> (nth 2 l) 50)
-      (delq l (assoc major-mode key-bind-logger-log-alist)))))
 
 (provide 'key-bind-logger)
