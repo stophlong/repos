@@ -188,26 +188,26 @@
       (goto-char (point-min))
       ;; ローカルのタスクを一個ずつチェック開始
       (while (re-search-forward
-	      "^\*+ \\(TODO\\|DONE\\) \\(\\[#.\\]\\)?\\([^\t\n\r\f]*\\)\t*\\([^\t\n\r\f]*\\)$" nil t)
+	      "^\*+ \\(TODO\\|DONE\\) \\(\\[#.\\]\\)?[ ]?\\([^\t\n\r\f]*\\)\t*\\([^\t\n\r\f]*\\)$" nil t)
 	(setq point (point))
 	(setq url (concat "/api.php?method=addTask;key=" org-toodledo-key ";"))
 	
 	;;titleの取得
-	(if (setq title (match-string-no-properties 2))
+	(if (setq title (match-string-no-properties 3))
 	    (if (> (length title) 255)
 		(error "Over 255 character!\n")
 	      (progn
 		(replace-regexp-in-string "&" "%26" title)
 		(replace-regexp-in-string ";" "%3B" title)
-		(setq url (concat url "title=" title ";")))))
-	
+		(setq url (concat url "title=" (encode-coding-string title 'utf-8) ";")))))
 	(setq properties (org-entry-properties (point) 'all))
 	
 	;; idを持っているかどうか．
-	(if (eq (setq id (cdr (assoc "ID" properties))) nil)
+	(if (not (equal (setq id (cdr (assoc "ID" properties))) nil))
 	    (progn
 	      ;;持っていた場合の動作
 	      (message "tasksと比較して，更新があればリモートにPush")
+	      (compare-local-to-remote tasks properties title)
 	      )
 	  (progn
 	    ;;持っていない場合の動作
@@ -265,6 +265,65 @@
 	    (match-string 1)
 	  "error")))))
 
+(defun compare-local-to-remote (tasks properties title-local)
+  (mapcar '(lambda (task)
+	     (let ((update-flag nil)
+		   (buf nil)
+		   (query nil)
+		   (id-remote (nth 1 (assoc "id" (cdr task))))
+		   (title-remote (decode-coding-string (nth 1 (assoc "title" (cdr task))) 'utf-8))
+		   (tags-remote (nth 1 (assoc "tasg" (cdr task))))
+		   (startdate-remote (nth 1 (assoc "startdate" (cdr task))))
+		   (duedate-remote (nth 1 (assoc "duedate" (cdr task))))
+		   (priority-remote (nth 1 (assoc "priority" (cdr task))))
+		   (id-local (cdr (assoc "ID" properties)))
+		   (tags-local (cdr (assoc "TAGS" properties)))
+		   (startdate-local (cdr (assoc "SCHEDULED" properties)))
+		   (duedate-local (cdr (assoc "DEADLINE" properties)))
+		   (priority-local (cdr (assoc "PRIORITY" properties))))
+	       (when (string= id-remote id-local)
+		 (setq query (concat "id=" id-remote ";"))
+		 ;; IDが同じタスクがリモートにあった場合
+		 ;; タイトルの比較
+		 (unless (string= title-remote title-local)
+		   (progn (concat "title=" (encode-coding-string title-local 'utf-8) ";")
+			  (setq update-flag t)))
+		 ;; タグの比較
+		 (unless (string= tags-remote tags-local)
+		   (progn (setq query (org-toodledo-get-tasgs-local properties query))
+			  (setq update-flag t)))
+		 ;; 開始日の比較
+		 (unless (string= startdate-remote startdate-local)
+		   (progn (setq query (org-toodledo-get-startdate properties query))
+			  (setq update-flag t)))
+		 ;; 終了日の比較
+		 (unless (string= duedate-remote duedate-local)
+		   (progn (setq query (org-toodledo-get-duedate properties query))
+			  (setq update-flag t)))
+		 ;; 優先度の比較
+		 (unless (string= priority-remote priority-local)
+		    (progn (setq query (org-toodledo-get-priority properties query))
+			   (setq update-flag t)))
+		 ;; (setq query (substring query 0 (- (length query) 1)))
+		 (when (equal update-flag t)
+		   (setq buf (url-retrieve-synchronously (concat "http://api.toodledo.com/api.php?method=editTask;key=" org-toodledo-key ";" query)))
+		   (with-current-buffer buf
+		     (goto-char (point-min))
+		     (re-search-forward "<success>\\(.*\\)</success>" nil t)
+		     (match-string 1))))))
+	  tasks))
+
+
+(defvar x)
+(setq x "aaa")
+(substring x 0 2)
+(store-substring x (- (length x) 1) " ")
+(store-substring "aaa" 2 "A")
+
+
+
+
+
 (defun org-toodledo-get-title-local (properties url)
   (let (title)
     (if (setq title (match-string-no-properties 2))
@@ -275,7 +334,7 @@
 	    (replace-regexp-in-string ";" "%3B" title)
 	    (setq url (concat url "title=" title ";")))))))
 
-(defun org-toodledo-get-tags-local (properties tags)
+(defun org-toodledo-get-tags-local (properties url)
   (let (tags)
     (if (setq tags (cdr (assoc "TAGS" properties)))
 	(if (> (length tags) 64)
@@ -289,7 +348,7 @@
 (defun org-toodledo-get-startdate (proeprties url)
   (let (startdate)
     (when (setq startdate (cdr (assoc "SCHEDULED" properties)))
-      (string-match "\\(....-..-..\\) ." duedate)
+      (string-match "\\(....-..-..\\) ." startdate)
       (setq url (concat url "startdate=" (match-string 1 startdate) ";")))))
 
 
@@ -297,15 +356,16 @@
   (let (duedate)
     (when (setq duedate (cdr (assoc "DEADLINE" properties)))
       (string-match "\\(....-..-..\\) ." duedate)
-      (setq url (concat url "duedate=" (match-string 1 duedate)";")))))
+      (setq url (concat url "duedate=" (match-string 1 duedate) ";")))))
 
 (defun org-toodledo-get-priority (properties url)
   (let (priority)
-    (when (setq priority (cdr (assoc "PRIORITY" properties)))
-      (cond ((string= priority "A") (setq priority (replace-regexp-in-string "A" "2" priority)))
-	    ((string= priority "B") (setq priority (replace-regexp-in-string "B" "1" priority)))
-	    ((string= priority "C") (setq priority (replace-regexp-in-string "C" "0" priority))))
-      (setq url (concat url "priority=" priority)))))
+    (if (setq priority (cdr (assoc "PRIORITY" properties)))
+ 	(cond ((string= priority "A") (setq priority (replace-regexp-in-string "A" "2" priority)))
+	      ((string= priority "B") (setq priority (replace-regexp-in-string "B" "1" priority)))
+	      ((string= priority "C") (setq priority (replace-regexp-in-string "C" "0" priority))))
+      (setq priority "1"))
+    (setq url (concat url "priority=" priority))))
 
 
 (defun org-toodledo-http-push (request-uri id)
@@ -317,7 +377,8 @@
 		  "api.toodledo.com"
 		  80))
       (set-process-coding-system proc 'binary 'binary)
-      (display-buffer buf 'pop-up-window)
+      (display-buffer buf)
+      ;;(display-buffer buf 'pop-up-window)
       (process-send-string
        proc
        (format (concat
@@ -328,8 +389,10 @@
 		"\r\n")))
       (accept-process-output proc 5)
       (goto-char (point-min))
-      (goto-char (re-search-forward
-		  "<added>\\(.*\\)</added>" nil t))
+      (re-search-forward
+		  "<added>\\(.*\\)</added>" nil t)
+;;      (goto-char (re-search-forward
+;;		  "<added>\\(.*\\)</added>" nil t))
       (setq id (match-string 1)))))
 
 
@@ -462,7 +525,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toodledoから全てのタスクを取得
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
- (defun org-toodledo-get-all-tasks ()
+(defun org-toodledo-get-all-tasks ()
   (let ((buf (url-retrieve-synchronously (concat "http://api.toodledo.com/api.php?method=getTasks;key="
 						 org-toodledo-key
 						 ";notcomp=0")))
@@ -475,6 +538,7 @@
     (kill-buffer buf)
     tasks))
 
+(org-toodledo-get-all-tasks)
 (defun org-toodledo-change-property (task properties)
   (let ((tag-remote (nth 1 (assoc "tag" task)))
 	(tag-local (cdr (assoc "TAG" properties)))
