@@ -216,6 +216,7 @@
 	    (goto-char point)
 	    ;; titleの取得
 	    (org-toodledo-get-tags-local properties url)
+	    (org-toodledo-get-todo-local properties url)
 	    (org-toodledo-get-startdate properties url)
 	    (org-toodledo-get-duedate properties url)
 	    (org-toodledo-get-priority properties url)
@@ -269,12 +270,16 @@
 		   (buf nil)
 		   (query nil)
 		   (id-remote (nth 1 (assoc "id" (cdr task))))
+		   (completed-remote (if (nth 1 (assoc "completed" (cdr task)))
+					 "1"
+				       "0"))
 		   (title-remote (decode-coding-string (nth 1 (assoc "title" (cdr task))) 'utf-8))
 		   (tags-remote (nth 1 (assoc "tasg" (cdr task))))
 		   (startdate-remote (nth 1 (assoc "startdate" (cdr task))))
 		   (duedate-remote (nth 1 (assoc "duedate" (cdr task))))
 		   (priority-remote (nth 1 (assoc "priority" (cdr task))))
 		   (id-local (cdr (assoc "ID" properties)))
+		   (completed-local (org-toodledo-convert-completed (cdr (assoc "TODO" properties))))
 		   (tags-local (cdr (assoc "TAGS" properties)))
 		   (startdate-local (cdr (assoc "SCHEDULED" properties)))
 		   (duedate-local (cdr (assoc "DEADLINE" properties)))
@@ -285,6 +290,9 @@
 		 ;; タイトルの比較
 		 (unless (string= title-remote title-local)
 		   (progn (concat "title=" (encode-coding-string title-local 'utf-8) ";")
+			  (setq update-flag t)))
+		 (unless (string= completed-remote completed-local)
+		   (progn (setq query (org-toodledo-get-todo-local properties query))
 			  (setq update-flag t)))
 		 ;; タグの比較
 		 (unless (string= tags-remote tags-local)
@@ -306,12 +314,23 @@
 		 (when (equal update-flag t)
 		   (setq buf (url-retrieve-synchronously (concat "http://api.toodledo.com/api.php?method=editTask;key=" org-toodledo-key ";" query)))
 		   (with-current-buffer buf
+		     (display-buffer buf)
 		     (goto-char (point-min))
+
 		     (re-search-forward "<success>\\(.*\\)</success>" nil t)
 		     (match-string 1))))))
 	  tasks))
 
 
+(defun org-toodledo-get-todo-local (properties url)
+  (let (todo)
+    (if (setq todo (cdr (assoc "TODO" properties)))
+	(cond ((string= todo "TODO") (setq todo "1"))
+	      ((string= todo "DONE") (setq todo "0")))
+      (setq todo "0"))
+      (setq url (concat url "completed=" todo))))
+	      
+	      
 
 (defun org-toodledo-get-title-local (properties url)
   (let (title)
@@ -356,6 +375,23 @@
       (setq priority "1"))
     (setq url (concat url "priority=" priority))))
 
+
+(defun org-toodledo-convert-priority (priority)
+  (cond ((string= priority "A") (setq priority "2"))
+	((string= priority "B") (setq priority "1"))
+	((string= priority "C") (setq priority "0"))
+	((string= priority "3") (setq priority "A"))
+	((string= priority "2") (setq priority "A"))
+	((string= priority "0") (setq priority "B"))
+	((string= priority "1") (setq priority "C"))
+	((string= priority "-1") (setq priority "C"))))
+
+(defun org-toodledo-convert-completed (completed)
+  (cond ((string= completed "TODO") (setq completed "1"))
+	((string= completed "DONE") (setq completed "0"))
+	((string= completed "1") (setq completed "DONE"))
+	((string= completed "0") (setq completed "TODO"))))
+	
 
 (defun org-toodledo-http-push (request-uri id)
   (with-temp-buffer
@@ -527,7 +563,6 @@
     (kill-buffer buf)
     tasks))
 
-(org-toodledo-get-all-tasks)
 (defun org-toodledo-change-property (task properties)
   (let ((tag-remote (nth 1 (assoc "tag" task)))
 	(tag-local (cdr (assoc "TAG" properties)))
