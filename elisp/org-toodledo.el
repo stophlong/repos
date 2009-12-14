@@ -58,8 +58,6 @@
     (kill-buffer buf)
     token))
 
-(org-toodledo-get-token org-toodledo-unique-uid)
-
 ;;;; get key
 (defun toodledo-get-key (org-toodledo-token)
   (md5 (md5 (concat (md5 org-toodledo-password) token org-toodledo-unique-uid))))
@@ -312,15 +310,6 @@
 		     (re-search-forward "<success>\\(.*\\)</success>" nil t)
 		     (match-string 1))))))
 	  tasks))
-
-
-(defvar x)
-(setq x "aaa")
-(substring x 0 2)
-(store-substring x (- (length x) 1) " ")
-(store-substring "aaa" 2 "A")
-
-
 
 
 
