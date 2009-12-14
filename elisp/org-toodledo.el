@@ -5,7 +5,7 @@
 ;; Copyright (C) 2009 Ryo Takaishi
 
 ;; Author: Ryo Takaishi <r_takaishi@eiliant.com>
-;; Created: 8 Dec 2009
+;; Created: 14 Dec 2009
 ;; Version: 0.2
 ;; Keywords: org-mode toodledo todo
 
