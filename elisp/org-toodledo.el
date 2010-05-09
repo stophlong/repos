@@ -9,11 +9,37 @@
 ;; Version: 0.2
 ;; Keywords: org-mode toodledo todo
 
+;; USAGE NOTES:
+;; From Takaishi's web-site:
+;; You need to look up the unique user ID in toodledo's account settings and
+;; put this in your .emacs
+;; (Require 'org-toodledo)
+;; (setq org-toodledo-unique-uid "This unique user ID")
+;; (setq org-toodledo-password "password ")
+;; (setq org-toodledo-files' (" / here / file / path. org "))
+;;
+;; The following data can be synchronized:
+;; Title
+;; Tag
+;; Start date
+;; Period
+;; Priority (only for stage 3. toodledo org-mode in three cases in the A, C -1 is now)
+;;
+;; Exposed commands:
+;; org-toodledo-pull 
+;; org-toodledo-push to push it 
+
+;; Issue:
+;; The required "sexpath.el" package is not available at this time.
+;; The last trace of it was here, but the file does not exist now:
+;; http://www.cx4a.org/blog/2009/01/s-xpath-elisp.html
+
 ;;; Code:
 
 (require 'md5)
 (require 'xml-parse)
 (require 'sexpath)
+(require 'xpath) 
 (require 'url-http)
 
 (defgroup org-toodledo nil
@@ -21,17 +47,17 @@
   :group 'tools)
 
 (defcustom org-toodledo-unique-uid ""
-  "ToodledoのユニークユーザID．"
+  "Toodledo unique user ID のユニークユーザID．"
   :group 'org-toodledo
   :type 'string)
 
 (defcustom org-toodledo-password ""
-  "Toodledoのパスワード．"
+  "Toodledo password のパスワード．"
   :group 'org-toodledo
   :type 'string)
 
 (defcustom org-toodledo-files '("")
-  "同期するファイル．"
+  "Synchronize Files 同期するファイル．"
   :group 'org-toodledo
   :type 'sexp)
 
@@ -41,8 +67,6 @@
 (defvar org-toodledo-tasks nil)
 (defvar org-toodledo-folder-list nil)
 
-
-;;;; get token
 (defun org-toodledo-get-token (org-toodledo-unique-uid)
   (let ((buf (url-retrieve-synchronously (concat
 					  "http://api.toodledo.com/api.php?method=getToken;userid="
@@ -67,7 +91,7 @@
 ;; General API
 ;;------------------------------------------------------------------------------
 
-;; フォルダリストの取得
+;; Get Folder フォルダリストの取得
 (defun org-toodledo-get-folders-list ()
   (let ((host "api.toodledo.com")
 	(request-uri (concat "/api.php?method=getFolders;key="
@@ -98,8 +122,8 @@
 	l))))
 
   
-;; フォルダの取り出し
-;; SXMLを返す
+;; Out of the Folder フォルダの取り出し
+;; SXML Returns SXMLを返す
 (defun toodledo-get-folders (org-toodledo-folder-list)
   (if (equal org-toodledo-folder-list nil)
       (setq org-toodledo-folder-list (org-toodledo-get-folders-list)))
@@ -128,35 +152,35 @@
 	 (concat "<folder id=\"\\([0-9]*\\)\" private=\"[0-9]*\" archived=\"[0-9]*\" order=\"[0-9]*\">" folder "</folder>"))
 	(match-string 1)))))
 
-;; フォルダ名の取得
+;; Get Folder Name フォルダ名の取得
 (defun org-toodledo-get-folder-name (folder-id)
   (if (equal org-toodledo-folder-list nil)
       (setq org-toodledo-folder-list (org-toodledo-get-folders-list)))
   (car (assoc folder-id org-toodledo-folder-list)))
 
-;; フォルダIDの取得
+;; Get Folder ID フォルダIDの取得
 (defun org-toodledo-get-folder-id (folder-name)
   (if (equal org-toodledo-folder-list nil)
       (setq org-toodledo-folder-list (org-toodledo-get-folders-list)))
   (car (rassoc (list folder-name) org-toodledo-folder-list)))
 
 (defun org-toodledo-check-setting ()
-  ;; org-toodledo-unique-uidが設定されているか確認
+  ;; org-toodledo-unique-uid is set to ensure that... が設定されているか確認
   (when (string= org-toodledo-unique-uid nil)
-    (error "org-toodledo-unique-uidが設定さていません．"))
-  ;; org-toodledo-passwordが設定されているか確認
+    (error "org-toodledo-unique-uid is not set が設定さていません．"))
+  ;; org-toodledo-password is set to ensure that... が設定されているか確認
   (when (string= org-toodledo-password nil)
-    (error "org-toodledo-posswordが設定されていません．"))
-  ;; org-toodledo-filesが設定されているかどうか確認
+    (error "org-toodledo-password has not been set が設定されていません．"))
+  ;; org-toodledo-files verify that the set が設定されているかどうか確認
   (when (equal org-toodledo-files nil)
-    (error "org-toodledo-filesが設定されていません．"))
-  ;; org-toodledo-tokenを取得しているかどうか確認
+    (error "org-toodledo-files is not set が設定されていません．"))
+  ;; org-toodledo-token verify that the obtained を取得しているかどうか確認
   (when (string= org-toodledo-token nil)
-    (message "org-toodledo-tokenを持っていないので取得します．")
-    ;; org-toodledo-tokenの取得
+    (message "org-toodledo-token do not have to getを持っていないので取得します．")
+    ;; org-toodledo-token acquisition の取得
     (setq org-toodledo-token (org-toodledo-get-token org-toodledo-unique-uid))
     (message "org-toodledo-token: %s" org-toodledo-token)
-    ;; org-toodledo-keyの取得
+    ;; org-toodledo-key acquistion の取得
     (setq org-toodledo-key (md5 (concat (md5 org-toodledo-password) org-toodledo-token org-toodledo-unique-uid)))
     (message "key: %s" org-toodledo-key)))
 
@@ -172,7 +196,7 @@
 
 (defun org-toodledo-push-file (file)
   (let ((buf (find-file-noselect file))
-	;; リモートから全てのタスク(削除されたタスクは除く)を取得
+	;; All remote tasks (except tasks deleted) get リモートから全てのタスク(削除されたタスクは除く)を取得
 	(tasks (org-toodledo-get-all-tasks))
 	properties
 	title
@@ -181,16 +205,16 @@
 	point
 	url)
     (with-current-buffer buf
-      ;; 削除されたタスクの探索
+      ;; Search tasks that were deleted 削除されたタスクの探索
       (org-toodledo-push-search-deleted-task buf tasks)
       (goto-char (point-min))
-      ;; ローカルのタスクを一個ずつチェック開始
+      ;; Begin the task of checking each piece of local ローカルのタスクを一個ずつチェック開始
       (while (re-search-forward
 	      "^\*+ \\(TODO\\|DONE\\) \\(\\[#.\\]\\)?[ ]?\\([^\t\n\r\f]*\\)\t*\\([^\t\n\r\f]*\\)$" nil t)
 	(setq point (point))
 	(setq url (concat "/api.php?method=addTask;key=" org-toodledo-key ";"))
 	
-	;;titleの取得
+	;;title acquisition の取得
 	(if (setq title (match-string-no-properties 3))
 	    (if (> (length title) 255)
 		(error "Over 255 character!\n")
@@ -201,20 +225,23 @@
 	(setq properties (org-entry-properties (point) 'all))
 	
 	;; idを持っているかどうか．
+	;; Id if you have.
 	(if (not (equal (setq id (cdr (assoc "ID" properties))) nil))
 	    (progn
 	      ;;持っていた場合の動作
-	      (message "tasksと比較して，更新があればリモートにPush")
+	      ;; Behavior when had
+	      (message "tasks compared to, remotely update any Push. tasks と比較して，更新があればリモートにPush")
 	      (compare-local-to-remote tasks properties title)
 	      )
 	  (progn
 	    ;;持っていない場合の動作
-
+	    ;; Operation does not have
 	    (re-search-backward "^*+ \\([^\t\n\r\f ]*\\)$")
 	    (setq folder (match-string-no-properties 1))
 	    (setq url (concat url "folder=" (org-toodledo-get-folder-id folder) ";"))
 	    (goto-char point)
 	    ;; titleの取得
+	    ;; Title acquisition
 	    (org-toodledo-get-tags-local properties url)
 	    (org-toodledo-get-todo-local properties url)
 	    (org-toodledo-get-startdate properties url)
@@ -287,7 +314,9 @@
 	       (when (string= id-remote id-local)
 		 (setq query (concat "id=" id-remote ";"))
 		 ;; IDが同じタスクがリモートにあった場合
+		 ;; ID If the same tasks remotely
 		 ;; タイトルの比較
+		 ;; Compare Title
 		 (unless (string= title-remote title-local)
 		   (progn (concat "title=" (encode-coding-string title-local 'utf-8) ";")
 			  (setq update-flag t)))
@@ -295,18 +324,22 @@
 		   (progn (setq query (org-toodledo-get-todo-local properties query))
 			  (setq update-flag t)))
 		 ;; タグの比較
+		 ;; Comparison tags
 		 (unless (string= tags-remote tags-local)
 		   (progn (setq query (org-toodledo-get-tasgs-local properties query))
 			  (setq update-flag t)))
 		 ;; 開始日の比較
+		 ;; Comparison start date
 		 (unless (string= startdate-remote startdate-local)
 		   (progn (setq query (org-toodledo-get-startdate properties query))
 			  (setq update-flag t)))
 		 ;; 終了日の比較
+		 ;; Comparisons end date
 		 (unless (string= duedate-remote duedate-local)
 		   (progn (setq query (org-toodledo-get-duedate properties query))
 			  (setq update-flag t)))
 		 ;; 優先度の比較
+		 ;; Comparison Priority
 		 (unless (string= priority-remote priority-local)
 		    (progn (setq query (org-toodledo-get-priority properties query))
 			   (setq update-flag t)))
@@ -445,7 +478,9 @@
 
 (defun org-toodledo-pull-delete-task (tasks)
   ;; ローカルのタスクがリモートにあるか確認．
+  ;; Check if the remote local tasks.
   ;; リモートにない場合，削除．
+  ;; If it is not remote, removed.
   (let (id
 	org-id
 	properties
@@ -481,11 +516,12 @@
 (defun org-toodledo-search-id-in-buffer (task)
   (let (id  
 	org-id
-	(folder (nth 1 (assoc (nth 1 (assoc "folder" (cdr task))) org-toodledo-folders))) ;; taskの所属フォルダ
+	(folder (nth 1 (assoc (nth 1 (assoc "folder" (cdr task))) org-toodledo-folders))) ;; taskの所属フォルダ ;; task belongs folder
 	properties
 	(flag nil))
 
     ;; taskの所属フォルダを探索
+    ;; Task belongs to explore a folder
     (goto-char (point-min))
     (unless (re-search-forward (concat "^*+ " folder "$") nil t)
       (goto-char (point-max))
@@ -495,46 +531,61 @@
     (setq id (nth 1 (assoc "id" (cdr task))))
 
     ;; taskを探索
+    ;; Task to explore
     ;; バッファの終端まで順に探索
+    ;; Discovery order until the end of the buffer
     (goto-char (point-min))
     (while (re-search-forward
 	    "^\*+ \\(TODO\\|DONE\\) \\(\\[#.\\] \\)?\\([^\t\n\r\f]*\\)\t*\\([^\t\n\r\f]*\\)$"
 	    nil t)
       ;; propertiesを取得
+      ;; Properties get
       (setq properties (org-entry-properties (point) 'all))
       ;; IDを比較
+      ;; ID comparison
       (when (setq org-id (cdr (assoc "ID" properties)))
 	;; IDが同じ(バッファ中にtaskが存在する場合)
+	;; ID are the same (if it exists in the buffer task)
 	(when (string= id org-id)
 	  ;; ローカルにタスクが存在している場合，各プロパティを比較して更新があるかどうか確認する．
-	  (message "一致したので各プロパティを比較して更新があるかどうか確認")
+	  ;; If there is a local task, to determine whether there is an update to compare each property.
+	  (message "determine if there is an update to compare properties that match it. 一致したので各プロパティを比較して更新があるかどうか確認")
 	  (org-toodledo-change-property task properties)
 	  (setq flag t))))
 
     ;; ローカルにタスクが存在していない場合
+    ;; If the task does not exist locally
     (when (equal flag nil)
       (goto-char (point-max))
       ;; 所属フォルダの行まで戻る
+      ;; Folder back to the line belongs
       (re-search-backward (concat "^\*+ " folder "$"))
       ;; 行末へ移動
+      ;; Go to end of line
       (end-of-line)
       ;; 改行の挿入
+      ;; Insert line breaks
       (newline)
       (if (equal (nth 1 (assoc "title" (cdr task))) nil)
 	(insert (concat "** TODO " ))
 	(insert (concat "** TODO " (decode-coding-string (nth 1 (assoc "title" (cdr task))) 'utf-8-unix))))
       ;; idを追加
+      ;; Id add
       (org-entry-put (point) "ID" id)
       ;; tagがあれば追加
+      ;; Tag if there is additional
       (if (nth 1 (assoc "tag" task))
 	  (org-set-tags-to (nth 1 (assoc "tag" task))))
       ;; startdateがあれば追加
+      ;; Startdate if any additional
       (when (nth 1 (assoc "startdate" task))
 	(org-add-planning-info 'scheduled (org-read-date nil t (nth 1 (assoc "startdate" task)) nil nil nil)))
       ;; duedateがあれば追加
+      ;; Duedate if any additional
       (if (nth 1 (assoc '("duedate") task))
 	  (org-add-planning-info 'deadline (org-read-date nil t (nth 1 (assoc '("duedate") task)) nil nil nil)))
       ;; ppriorityがあれば追加
+      ;; ppriority if any additional
       (when (nth 1 (assoc "priority" task))
 	(let ((priority (nth 1 (assoc "priority" task))))
 	  (cond ((string= priority "3") (setq priority (replace-regexp-in-string "3" "A" priority)))
@@ -545,10 +596,11 @@
 	  (org-entry-put (point) "PRIORITY" priority)))
       (unless (eq (nth 1 (assoc "completed" task)) nil)
 	(org-todo "DONE"))
-      (message "新規タスクとして追加"))))
+      (message "Add a new task 新規タスクとして追加"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Toodledoから全てのタスクを取得
+;; Toodledo retrieve all tasks from
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun org-toodledo-get-all-tasks ()
   (let ((buf (url-retrieve-synchronously (concat "http://api.toodledo.com/api.php?method=getTasks;key="
@@ -575,21 +627,24 @@
 	(comp-remote (nth 1 (assoc "completed" task)))
 	(comp-local (cdr (assoc "TODO" properties))))
     ;; tagを比較，変更
+    ;; Tag compare changes
     (unless (string= tag-remote tag-local)
       (org-entry-delete (point) "TAG")
       (org-entry-put (point) "TAG" tag-remote))
     ;; startdateを比較，変更
+    ;; Startdate compare changes
     (unless (string= startdate-remote startdate-local)
       (org-entry-delete (point) "SCHEDULED")
       (unless (equal startdate-remote nil)
 	(org-add-planning-info 'scheduled (org-read-date nil t startdate-remote nil nil nil))))
-    
     ;; duedateを比較，変更
+    ;; Duedate compare changes
     (unless (string= duedate-remote duedate-local)
       (org-entry-delete (point) "DEADLINE")
       (unless (equal duedate-remote nil)
 	(org-add-plannning-info 'deadline (org-read-date nil t duedate-remote nil nil nil))))
     ;; priorityを比較，変更
+    ;; Priority compared changes
     (unless (string= priority-remote priority-local)
       (cond ((string= priority-remote "3") (setq priority-remote (replace-regexp-in-string "3" "A" priority-remote)))
 	    ((string= priority-remote "2") (setq priority-remote (replace-regexp-in-string "2" "A" priority-remote)))
@@ -599,6 +654,7 @@
       (org-entry-delete (point) "PRIORITY")
       (org-entry-put (point) "PRIORITY" priority-remote))
     ;; completedを比較，変更
+    ;; Completed a comparison of changes
     (unless (eq comp-remote nil)
       (org-todo "DONE")))
   )
