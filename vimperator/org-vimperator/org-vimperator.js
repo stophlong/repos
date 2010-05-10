@@ -28,6 +28,20 @@ let PLUGIN_INFO =
 
 (function() {
 
+    var evalFunc = window.eval;
+    try {
+        var sandbox = new Components.utils.Sandbox(window);
+        if(Components.utils.evalInSandbox("true", sandbox) == true) {
+            evalFunc = function(text) {
+                return Components.utils.evalInSandbox(text, sandbox);
+            }
+        }
+    } catch(e) { liberator.log('warning: org-vimperator.js is working with unsafe sandbox.');}
+
+    var isUseMacOSX = typeof liberator.globalVariables.org_vimperator_mac_workaround == 'undefined' ?
+        true : evalFunc(liberator.globalVariables.org_vimperator_mac_workaround);
+
+    
     function orgProtocolSendURL(arg) {
         if (arg == "store-link") {
             var url = "store-link://" + encodeURIComponent( window.content.document.URL) 
@@ -44,7 +58,9 @@ let PLUGIN_INFO =
 
         pref = Components.classes["@mozilla.org/preferences-service;1"]
             .getService(Components.interfaces.nsIPrefBranch);
-        if( pref.getBoolPref("extensions.org-vimperator.macWorkaround") ) { // Workaround
+
+        if( isUseMacOSX ) { // Workaround
+
             var tmpFileName = "~/.org-vimperator-mac.tmp"
             
             var file = Components.classes["@mozilla.org/file/local;1"]
