@@ -7,7 +7,7 @@ let PLUGIN_INFO =
 <version>0.1</version>
 <minVersion>2.3.1</minVersion>
 <maxVersion>2.3.1</maxVersion>
-<updateURL>http://svn.coderepos.org/share/lang/javascript/vimperator-plugins/trunk/tombloo.js</updateURL>
+<updateURL>http://github.com/takaishi/repos/raw/master/vimperator/org-vimperator/org-vimperator.js</updateURL>
 <detail><![CDATA[
 
 == COMMANDS ==
