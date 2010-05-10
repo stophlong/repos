@@ -44,8 +44,8 @@ let PLUGIN_INFO =
 
         pref = Components.classes["@mozilla.org/preferences-service;1"]
             .getService(Components.interfaces.nsIPrefBranch);
-        if( pref.getBoolPref("extensions.vimporg.macWorkaround") ) { // Workaround
-            var tmpFileName = "~/.org-fireforg-mac.tmp"
+        if( pref.getBoolPref("extensions.org-vimperator.macWorkaround") ) { // Workaround
+            var tmpFileName = "~/.org-vimperator-mac.tmp"
             
             var file = Components.classes["@mozilla.org/file/local;1"]
             .createInstance(Components.interfaces.nsILocalFile);
@@ -69,10 +69,6 @@ let PLUGIN_INFO =
                 req.send(null);
             } catch (ex) { }
         }
-    }
-
-    function hoge(){
-        liberator.echo("manageraaaa");
     }
 
     commands.addUserCommand(
