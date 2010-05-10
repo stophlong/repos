@@ -173,7 +173,7 @@
 (defun org-toodledo-push-file (file)
   (let ((buf (find-file-noselect file))
 	;; リモートから全てのタスク(削除されたタスクは除く)を取得
-	(tasks (org-toodledo-get-all-tasks))
+	;;(tasks (org-toodledo-get-all-tasks))
 	properties
 	title
 	id
@@ -182,7 +182,7 @@
 	url)
     (with-current-buffer buf
       ;; 削除されたタスクの探索
-      (org-toodledo-push-search-deleted-task buf tasks)
+      ;;(org-toodledo-push-search-deleted-task buf tasks)
       (goto-char (point-min))
       ;; ローカルのタスクを一個ずつチェック開始
       (while (re-search-forward
@@ -205,22 +205,24 @@
 	    (progn
 	      ;;持っていた場合の動作
 	      (message "tasksと比較して，更新があればリモートにPush")
-	      (compare-local-to-remote tasks properties title)
+	      ;;(compare-local-to-remote tasks properties title)
 	      )
 	  (progn
 	    ;;持っていない場合の動作
 
-	    (re-search-backward "^*+ \\([^\t\n\r\f ]*\\)$")
-	    (setq folder (match-string-no-properties 1))
+	    ;;(re-search-backward "^*+ \\([^\t\n\r\f ]*\\)$")
+	    (org-toodledo-get-folder-local properties url)
+	    ;;(setq folder (cdr (assoc "FOLDER" properties)))
+	    ;;(setq folder (match-string-no-properties 1))
 	    (setq url (concat url "folder=" (org-toodledo-get-folder-id folder) ";"))
-	    (goto-char point)
+	    ;;(goto-char point)
 	    ;; titleの取得
 	    (org-toodledo-get-tags-local properties url)
 	    (org-toodledo-get-todo-local properties url)
 	    (org-toodledo-get-startdate properties url)
 	    (org-toodledo-get-duedate properties url)
 	    (org-toodledo-get-priority properties url)
-	    (setq id (org-toodledo-http-push url id))
+	    ;;(setq id (org-toodledo-http-push url id))
 	    (org-entry-put (point) "ID" id)))))))
   
 
@@ -330,7 +332,10 @@
       (setq todo "0"))
       (setq url (concat url "completed=" todo))))
 	      
-	      
+(defun org-toodledo-get-folder-local (properties url)
+  (let (folder)
+    (when (setq folder (cdr (assoc "FOLDER" properties)))
+      (setq url (concat "folder=" folder ";")))))
 
 (defun org-toodledo-get-title-local (properties url)
   (let (title)
