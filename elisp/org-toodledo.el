@@ -11,6 +11,7 @@
 
 ;; USAGE NOTES:
 ;; From Takaishi's web-site:
+;; http://d.hatena.ne.jp/r_takaishi/?of=15
 ;; You need to look up the unique user ID in toodledo's account settings and
 ;; put this in your .emacs
 ;; (Require 'org-toodledo)
@@ -29,17 +30,20 @@
 ;; org-toodledo-pull 
 ;; org-toodledo-push to push it 
 
-;; Issue:
-;; The required "sexpath.el" package is not available at this time.
-;; The last trace of it was here, but the file does not exist now:
-;; http://www.cx4a.org/blog/2009/01/s-xpath-elisp.html
+;; The required "sexpath.el" is now available 
+;; from http://cx4a.sakura.ne.jp/blog/2009/01/s-xpath-elisp.html
+;; and on github.
+;; See for author's page
+;; http://www.cx4a.org/
+
+;; ISSUES:
+;; THIS IS NOT WORKING PROPERLY YET AND CAN EASILY DELETE ALL YOUR ORG-TOODLEDO-PUSH ENTRIES! BACKUP BEFORE USE.
 
 ;;; Code:
 
 (require 'md5)
 (require 'xml-parse)
 (require 'sexpath)
-(require 'xpath) 
 (require 'url-http)
 
 (defgroup org-toodledo nil
@@ -190,6 +194,7 @@
 
 (defvar all-tasks nil)
 (defun org-toodledo-push ()
+;;  (error "THIS IS NOT WORKING PROPERLY YET AND CAN EASILY DELETE ALL YOUR ORG-TOODLEDO-PUSH ENTRIES! BACKUP BEFORE USE.")
   (interactive)
   (org-toodledo-check-setting)
   (mapcar 'org-toodledo-push-file org-toodledo-files))
@@ -221,6 +226,7 @@
 	      (progn
 		(replace-regexp-in-string "&" "%26" title)
 		(replace-regexp-in-string ";" "%3B" title)
+		;; TODO probably also need "#" code
 		(setq url (concat url "title=" (encode-coding-string title 'utf-8) ";")))))
 	(setq properties (org-entry-properties (point) 'all))
 	
@@ -326,7 +332,7 @@
 		 ;; タグの比較
 		 ;; Comparison tags
 		 (unless (string= tags-remote tags-local)
-		   (progn (setq query (org-toodledo-get-tasgs-local properties query))
+		   (progn (setq query (org-toodledo-get-tags-local properties query))
 			  (setq update-flag t)))
 		 ;; 開始日の比較
 		 ;; Comparison start date
@@ -460,6 +466,7 @@
 ;;------------------------------------------------------------------------------
 
 (defun org-toodledo-pull ()
+;;  (error "THIS IS NOT WORKING PROPERLY YET AND CAN EASILY DELETE ALL YOUR ORG-TOODLEDO-PULL ENTRIES! BACKUP BEFORE USE.")
   (interactive)
   (org-toodledo-check-setting)
   (mapcar 'org-toodledo-pull-file org-toodledo-files))
@@ -613,7 +620,8 @@
 		    (goto-char (point-min))
 		    (sexpath-eval "\"task\"" (xml-parse-read 'tasks)))))
     (kill-buffer buf)
-    tasks))
+    tasks)
+)
 
 (defun org-toodledo-change-property (task properties)
   (let ((tag-remote (nth 1 (assoc "tag" task)))
