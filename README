@@ -1,0 +1,29 @@
+USAGE NOTES:
+From Takaishi's web-site:
+http://d.hatena.ne.jp/r_takaishi/?of=15
+
+You need to look up the unique user ID in toodledo's account settings and put this in your .emacs
+
+(Require 'org-toodledo)
+(setq org-toodledo-unique-uid "This unique user ID")
+(setq org-toodledo-password "password ")
+(setq org-toodledo-files' (" / here / file / path. org "))
+
+The following data can be synchronized as of 2010_05_11
+Title
+Tag
+Start date
+Period
+Priority (only for stage 3. toodledo org-mode in three cases in the A, C -1 is now)
+
+Exposed commands:
+org-toodledo-pull to pull from toodledo
+org-toodledo-push to push to toodledo
+
+The required "sexpath.el" is now available 
+from http://cx4a.sakura.ne.jp/blog/2009/01/s-xpath-elisp.html
+and on github.
+See http://www.cx4a.org/ for author's page
+
+MAJOR ISSUES:
+THIS IS NOT WORKING PROPERLY YET AND CAN EASILY DELETE ALL YOUR ORG-TOODLEDO-PUSH ENTRIES! BACKUP BEFORE USE.

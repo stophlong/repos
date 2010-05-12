@@ -1,3 +1,24 @@
+;;; sexpath.el --- Xpath expressions to extract s-like form factor
+
+;; Copyright (C) 2010  
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+;; Boston, MA 02110-1301, USA.
+
+;;; Commentary:
+
 ;; XPath expression to extract the S-like form factor with Emacs Lisp
 ;; S 式から XPath 風の書式で要素を抜き出す Emacs Lisp
 ;; from http://cx4a.sakura.ne.jp/blog/2009/01/s-xpath-elisp.html
@@ -55,6 +76,8 @@
 
 ;; とりあえず実装は以下のようになっている。もう少し手入れしてちゃんと動くようになったらどこかに公開するかも。
 ;; Anyway, that is implemented as follows. Public or even somewhere as it works to become a little more care.
+
+;;; Code:
 
 (defvar sexpath-ignore-symbol-chars "[/%@\[]")
 
