@@ -222,7 +222,7 @@
 
 (defvar all-tasks nil)
 (defun org-toodledo-push ()
-;;  (error "THIS IS NOT WORKING PROPERLY YET AND CAN EASILY DELETE ALL YOUR ORG-TOODLEDO-PUSH ENTRIES! BACKUP BEFORE USE.")
+  (error "THIS IS NOT WORKING PROPERLY YET AND CAN EASILY DELETE ALL YOUR ORG-TOODLEDO-PUSH ENTRIES! BACKUP BEFORE USE.")
   (interactive)
   (org-toodledo-check-setting)
   (mapcar 'org-toodledo-push-file org-toodledo-files))
@@ -504,7 +504,7 @@
 ;;------------------------------------------------------------------------------
 
 (defun org-toodledo-pull ()
-;;  (error "THIS IS NOT WORKING PROPERLY YET AND CAN EASILY DELETE ALL YOUR ORG-TOODLEDO-PULL ENTRIES! BACKUP BEFORE USE.")
+  (error "THIS IS NOT WORKING PROPERLY YET AND CAN EASILY DELETE ALL YOUR ORG-TOODLEDO-PULL ENTRIES! BACKUP BEFORE USE.")
   (interactive)
   (org-toodledo-check-setting)
   (mapcar 'org-toodledo-pull-file org-toodledo-files))
