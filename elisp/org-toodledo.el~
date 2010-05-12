@@ -44,7 +44,6 @@
 ;; * Only appears to deal with "TODO" and "DONE" : be good to add other options.
 ;; ** Could build on mobile-org which generates a list of status levels based on the file
 ;; * Does not deal with notes
-;; * TODO Be good to have option to not use Properties drawers.
 ;; * Likely does not deal with "#" characters in title correctly.
 ;; * Is 255 character title limit a toodledo limit?
 ;; * Tags from emacs appear to add colons into Toodledo
